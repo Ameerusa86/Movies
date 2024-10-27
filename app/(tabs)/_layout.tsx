@@ -1,37 +1,58 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
-import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+const TabsLayout = () => {
   return (
     <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'code-slash' : 'code-slash-outline'} color={color} />
-          ),
-        }}
-      />
+      screenOptions={({ route }) => ({
+        headerShown: false, // Hides the header across all tabs
+        tabBarActiveTintColor: "#FF6B00",
+        tabBarInactiveTintColor: "#A9A9A9",
+        tabBarStyle: {
+          backgroundColor: "#1a1a1a",
+          borderTopWidth: 0,
+          paddingVertical: 8,
+          height: 60,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+          paddingBottom: 4,
+        },
+        tabBarIcon: ({ color, size }) => {
+          let iconName;
+          switch (route.name) {
+            case "index":
+              iconName = "home";
+              break;
+            case "movies":
+              iconName = "film";
+              break;
+            case "tv-shows":
+              iconName = "tv";
+              break;
+            case "profile":
+              iconName = "person";
+              break;
+            default:
+              iconName = "home";
+          }
+          return (
+            <Ionicons
+              name={iconName as keyof typeof Ionicons.glyphMap}
+              color={color}
+              size={size}
+            />
+          );
+        },
+      })}
+    >
+      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="movies" options={{ title: "Movies" }} />
+      <Tabs.Screen name="tv-shows" options={{ title: "TV Shows" }} />
+      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
   );
-}
+};
+
+export default TabsLayout;

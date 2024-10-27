@@ -1,70 +1,165 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+// app/index.tsx
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  ImageBackground,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions,
+} from "react-native";
+import { Movie } from "../../types/types";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import CarouselComponent from "@/components/Carousel";
+import { fetchLatestMovies } from "@/services/TMDBapi";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+const { width: screenWidth } = Dimensions.get("window");
 
-export default function HomeScreen() {
+const HomeScreen: React.FC = () => {
+  const [latestMovies, setLatestMovies] = useState<Movie[]>([]);
+  const [mainImage, setMainImage] = useState<Movie | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadLatestMovies = async () => {
+      try {
+        const latestMoviesData = await fetchLatestMovies();
+
+        if (latestMoviesData && latestMoviesData.length > 0) {
+          setLatestMovies(latestMoviesData);
+          setMainImage(latestMoviesData[0]); // Set the first movie as the main image
+        } else {
+          console.log("No movies data received.");
+        }
+      } catch (error) {
+        console.error("Error fetching latest movies:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLatestMovies();
+  }, []);
+
+  if (loading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-primary">
+        <Text className="text-clean text-lg">Loading...</Text>
+      </View>
+    );
+  }
+
+  if (!mainImage) {
+    return (
+      <View className="flex-1 justify-center items-center bg-primary">
+        <Text className="text-clean text-lg">No movies available.</Text>
+      </View>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
-}
+    <ScrollView
+      className="flex-1 bg-primary"
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 20 }}
+    >
+      {/* Header Section */}
+      <ImageBackground
+        source={{
+          uri: `https://image.tmdb.org/t/p/original${mainImage.poster_path}`,
+        }}
+        style={{ width: screenWidth, height: 420 }}
+        className="relative bg-cover bg-center"
+      >
+        {/* Movie Info */}
+        <View className="absolute bottom-12 left-4 right-4">
+          <View className="flex-row items-center mb-3">
+            <FontAwesome name="imdb" size={24} color="#F5C518" />
+            <Text className="text-clean font-semibold ml-2 text-lg">
+              {mainImage.vote_average.toFixed(1)}
+            </Text>
+          </View>
+          <Text className="text-clean text-3xl font-bold mb-3">
+            {mainImage.title}
+          </Text>
+          <View className="flex-row items-center space-x-4">
+            <TouchableOpacity className="bg-blue-500 rounded-full py-2 px-6 flex-row items-center">
+              <Text className="text-clean text-lg font-semibold">
+                Watch Now
+              </Text>
+            </TouchableOpacity>
+            <Ionicons name="bookmark-outline" size={24} color="#F8F9FA" />
+          </View>
+        </View>
+      </ImageBackground>
 
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
+      {/* Thumbnail Carousel to Change Main Image */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        className="mt-6 pl-4"
+        contentContainerStyle={{ alignItems: "center" }}
+      >
+        {latestMovies.map((movie) => (
+          <TouchableOpacity
+            key={movie.id}
+            onPress={() => setMainImage(movie)}
+            className="mr-4"
+          >
+            <ImageBackground
+              source={{
+                uri: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
+              }}
+              style={{ width: 80, height: 120 }}
+              className={`rounded-lg overflow-hidden ${
+                mainImage.id === movie.id ? "border-2 border-blue-500" : ""
+              }`}
+            />
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Carousel Section */}
+      <Text className="text-clean text-xl font-bold mt-6 ml-4">
+        Latest Movies
+      </Text>
+      <CarouselComponent data={latestMovies} />
+
+      {/* For You Section */}
+      <View className="flex-row justify-between items-center mx-4 mt-8">
+        <Text className="text-clean text-xl font-bold">For You</Text>
+        <Text className="text-blue-500 font-semibold">See All</Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        className="mt-4 pl-4"
+        contentContainerStyle={{ alignItems: "center" }}
+      >
+        {latestMovies.map((movie) => (
+          <View key={movie.id} className="mr-4 bg-secondary p-2 rounded-lg">
+            <ImageBackground
+              source={{
+                uri: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
+              }}
+              style={{ width: 120, height: 180 }}
+              className="rounded-lg overflow-hidden"
+            >
+              <View className="absolute top-2 left-2 flex-row items-center">
+                <FontAwesome name="imdb" size={18} color="#F5C518" />
+                <Text className="text-clean font-semibold ml-1 text-xs">
+                  {movie.vote_average.toFixed(1)}
+                </Text>
+              </View>
+            </ImageBackground>
+            <Text className="text-clean font-semibold mt-2 text-center">
+              {movie.title}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+    </ScrollView>
+  );
+};
+
+export default HomeScreen;
